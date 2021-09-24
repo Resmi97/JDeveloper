@@ -1,0 +1,86 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Tue Sep 21 10:32:39 IST 2021
+  Author:  ustjavab213
+  Type: BPEL 2.0 Process
+  Purpose: Synchronous BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="dbprojectBPELProcess"
+               targetNamespace="http://xmlns.oracle.com/DemoBPEL/dbproject/dbprojectBPELProcess"
+               xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+               xmlns:client="http://xmlns.oracle.com/DemoBPEL/dbproject/dbprojectBPELProcess"
+               xmlns:ora="http://schemas.oracle.com/xpath/extension"
+               xmlns:ui="http://xmlns.oracle.com/soa/designer"
+               xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+         xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/pcbpel/adapter/db/DemoBPEL/dbproject/callproceduredb"
+         xmlns:ns2="http://xmlns.oracle.com/pcbpel/adapter/db/sp/callproceduredb"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <import ui:processWSDL="true" namespace="http://xmlns.oracle.com/DemoBPEL/dbproject/dbprojectBPELProcess" location="../WSDLs/dbprojectBPELProcess.wsdl" importType="http://schemas.xmlsoap.org/wsdl/"/>
+    <!-- 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        PARTNERLINKS                                                      
+        List of services participating in this BPEL process               
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    --> 
+  <partnerLinks>
+    <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+    <partnerLink name="dbprojectbpelprocess_client" partnerLinkType="client:dbprojectBPELProcess" myRole="dbprojectBPELProcessProvider"/>
+    <partnerLink name="callproceduredb" partnerLinkType="ns1:callproceduredb_plt" partnerRole="callproceduredb_role"/>
+  </partnerLinks>
+
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      VARIABLES                                                        
+      List of messages and XML documents used within this BPEL process 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <variables>
+    <!-- Reference to the message passed as input during initiation -->
+    <variable name="inputVariable" messageType="client:dbprojectBPELProcessRequestMessage"/>
+
+    <!-- Reference to the message that will be returned to the requester-->
+    <variable name="outputVariable" messageType="client:dbprojectBPELProcessResponseMessage"/>
+    <variable name="Invoke1_callproceduredb_InputVariable" messageType="ns1:args_in_msg"/>
+    <variable name="Invoke1_callproceduredb_OutputVariable" messageType="ns1:args_out_msg"/>
+  </variables>
+
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     ORCHESTRATION LOGIC                                               
+     Set of activities coordinating the flow of messages across the    
+     services integrated within this business process                  
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <sequence name="main">
+
+    <!-- Receive input from requestor. (Note: This maps to operation defined in dbprojectBPELProcess.wsdl) -->
+    <receive name="receiveInput" partnerLink="dbprojectbpelprocess_client" portType="client:dbprojectBPELProcess" operation="process" variable="inputVariable" createInstance="yes"/>
+    <assign name="Assign1">
+      <copy>
+        <from>$inputVariable.payload/client:input</from>
+        <to expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0">$Invoke1_callproceduredb_InputVariable.InputParameters/ns2:VID</to>
+      </copy>
+    </assign>
+    <invoke name="Invoke1" partnerLink="callproceduredb" portType="ns1:callproceduredb_ptt"
+            operation="callproceduredb" inputVariable="Invoke1_callproceduredb_InputVariable"
+            outputVariable="Invoke1_callproceduredb_OutputVariable" bpelx:invokeAsDetail="no"/>
+    <assign name="Assign2">
+      <copy>
+        <from>$Invoke1_callproceduredb_OutputVariable.OutputParameters/ns2:VNAME</from>
+        <to expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0">$outputVariable.payload/client:result</to>
+      </copy>
+    </assign>
+    <!-- Generate reply to synchronous request -->
+    <reply name="replyOutput" partnerLink="dbprojectbpelprocess_client" portType="client:dbprojectBPELProcess" operation="process" variable="outputVariable"/>
+  </sequence>
+</process>

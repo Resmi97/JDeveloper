@@ -1,0 +1,50 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer
+
+  Created: Thu Sep 16 16:08:46 IST 2021
+  Author:  User
+  Type: BPEL 2.0 Process
+  Purpose: Empty BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="FileDemoBPELProcess"
+               targetNamespace="http://xmlns.oracle.com/DemoBPEL/FileAdapter/FileDemoBPELProcess"
+               xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+               xmlns:client="http://xmlns.oracle.com/DemoBPEL/FileAdapter/FileDemoBPELProcess"
+               xmlns:ora="http://schemas.oracle.com/xpath/extension"
+               xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+               xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+         xmlns:ns1="http://xmlns.oracle.com/pcbpel/adapter/file/DemoBPEL/FileAdapter/ReadFilefromlocal"
+         xmlns:ns2="http://xmlns.oracle.com/pcbpel/adapter/file/DemoBPEL/FileAdapter/WrireFiletolocal"
+         xmlns:ns3="http://xmlns.oracle.com/pcbpel/adapter/opaque/">
+
+  <!--
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     ORCHESTRATION LOGIC
+     Set of activities coordinating the flow of messages across the
+     services integrated within this business process
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <partnerLinks>
+    <partnerLink name="ReadFilefromlocal" partnerLinkType="ns1:Read_plt" myRole="Read_role"/>
+    <partnerLink name="WrireFiletolocal" partnerLinkType="ns2:Write_plt" partnerRole="Write_role"/>
+  </partnerLinks>
+  <variables>
+    <variable name="ReceiveFile_Read_InputVariable" messageType="ns1:Read_msg"/>
+    <variable name="Invokewrite_Write_InputVariable" messageType="ns2:Write_msg"/>
+  </variables>
+  <sequence name="main">
+    <receive name="ReceiveFile" createInstance="yes" partnerLink="ReadFilefromlocal" portType="ns1:Read_ptt"
+             operation="Read" variable="ReceiveFile_Read_InputVariable"/>
+    <assign name="Assignfile">
+      <copy>
+        <from>$ReceiveFile_Read_InputVariable.opaque</from>
+        <to expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath1.0">$Invokewrite_Write_InputVariable.opaque</to>
+      </copy>
+    </assign>
+    <invoke name="Invokewrite" partnerLink="WrireFiletolocal" portType="ns2:Write_ptt"
+            operation="Write" inputVariable="Invokewrite_Write_InputVariable" bpelx:invokeAsDetail="no"/>
+  </sequence>
+</process>
